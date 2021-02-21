@@ -25,4 +25,34 @@ theme_1 <-
     #panel.border = element_rect(fill = NA, colour = "#1e1e1e", size = 2),
     panel.background = element_rect(colour = "grey20", fill = "#1e1e1e"),
     plot.background = element_rect(colour = "grey20", fill = "#1e1e1e")
-  ) 
+  )
+
+# build calendar ----
+f_calendar <- function(ical, fcal){
+  require(lubridate)
+  require(zoo)
+  require(tidyverse)
+  #require(tidyverse)
+  ical <- tibble(data = seq.Date(as.Date(ical, '%d-%m-%Y'),
+                                     as.Date(fcal, '%d-%m-%Y'), by = '1 day')) %>%
+    mutate(
+      #finding the day no. of the week
+      weekday = lubridate::wday(data, week_start = getOption("lubridate.week.start", 1)),
+      #converting the day no. to factor
+      weekdayf = factor(weekday,levels=rev(1:7),
+                        labels=rev(c("Seg","Ter","Qua","Qui","Sex","Sab","Dom")),
+                        ordered=TRUE),
+      # finding the month
+      monthf = factor(month(data),levels=as.character(1:12),
+                      labels=c("Jan","Fev","Mar","Abr","Mai","Jun","Jul",
+                               "Ago","Set","Out","Nov","Dez"),
+                      ordered=TRUE),
+      #finding the year and the month from the date. Eg: Sep 2020
+      yearmonth = factor(as.yearmon(data)),
+      #finding the week of the year for each date
+      week = as.numeric(format(data,"%W")),
+      day = strftime(data, format="%Y-%m-%d", tz = 'UTC')
+    )
+
+  return(ical)
+}

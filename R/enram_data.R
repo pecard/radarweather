@@ -1,25 +1,3 @@
-# devtools::install_github("adokter/bioRad")
-# http://adriaandokter.com/bioRad/articles/bioRad.html
-# https://github.com/adokter/bioRad
-# https://bmm.raphaelnussbaumer.com/explorevp/
-
-# http://www.enram.eu/
-# http://enram.github.io/data-repository/?prefix=pt/lis/2020/
-# https://github.com/enram/data-repository
-# https://github.com/enram/globam-dmp/wiki/pt
-# https://enram.github.io/globam-dmp/5_pipeline.html
-
-# http://www.eumetnet.eu/activities/observations-programme/current-activities/opera/
-# http://se.baltrad.eu/
-
-# https://www.flysafe-birdtam.eu/profiles.html near real time observation with weather radar
-# https://onlinelibrary.wiley.com/doi/10.1111/ecog.04125 # BirdTAM Scale
-
-# if (!requireNamespace("BiocManager", quietly = TRUE))
-#   install.packages("BiocManager")
-# 
-# BiocManager::install("rhdf5")
-
 # Packages ----
 library(bioRad)
 library(rhdf5)
@@ -61,7 +39,7 @@ ip_vpts1 <- integrate_profile(
   alpha = NA,
   interval_max = Inf
 )
-# 
+#
 # plot(ip_vpts1, quantity = "mtr",
 #      night_shade = T)
 
@@ -78,30 +56,11 @@ plot(
   ylim = c(0, 1000),
 )
 
-# Calendar  ----
+# Calendar Dates ----
 ical = '01-12-2020 00:00:00'
 fcal = '10-02-2021 23:59:59'
 
-calendar <- tibble(data = seq.Date(as.Date(ical, '%d-%m-%Y'),
-                                   as.Date(fcal, '%d-%m-%Y'), by = '1 day')) %>%
-  mutate(
-    #finding the day no. of the week
-    weekday = lubridate::wday(data, week_start = getOption("lubridate.week.start", 1)),
-    #converting the day no. to factor
-    weekdayf = factor(weekday,levels=rev(1:7),
-                      labels=rev(c("Seg","Ter","Qua","Qui","Sex","Sab","Dom")),
-                      ordered=TRUE), 
-    # finding the month 
-    monthf = factor(month(data),levels=as.character(1:12),
-                    labels=c("Jan","Fev","Mar","Abr","Mai","Jun","Jul",
-                             "Ago","Set","Out","Nov","Dez"),
-                    ordered=TRUE),
-    #finding the year and the month from the date. Eg: Sep 2020 
-    yearmonth = factor(as.yearmon(data)),
-    #finding the week of the year for each date 
-    week = as.numeric(format(data,"%W")),
-    day = strftime(data, format="%Y-%m-%d", tz = 'UTC')
-  )
+calendar <- f_calendar(ical, fcal)
 
 bin_cal <- tidyr::crossing(filter(select(calendar, day)),
                            alt = tsReg1$height)
@@ -121,12 +80,12 @@ dens_cal <- bin_cal %>%
                    labels = c('0', '1','2','3','4',
                               '5','6','7','8','>8')))
 # BirdTAM Scale
-BirdTAM <- c('0' = '#FFFFFF', '1' = '#E5FFE5', '2' = '#CCFFCC', 
+BirdTAM <- c('0' = '#FFFFFF', '1' = '#E5FFE5', '2' = '#CCFFCC',
              '3'= '#B2FFB2', '4'='#99FF99',
-             '5' = '#99FF99', '6' = '#FFFF00', '7' = '#FF7F00', 
+             '5' = '#99FF99', '6' = '#FFFF00', '7' = '#FF7F00',
              '8' = '#FF0000', '>8' = '#333333')
 
-pw1 <- 
+pw1 <-
   dens_cal %>% filter(alt > 0 & !is.na(alt)) %>%
   #ggplot(aes(x = day, y = alt, z = sdens)) +
   #stat_summary_2d(fun = sum, bins = 8) +
@@ -145,7 +104,7 @@ pw1
 # weather radar MTR
 wr_mtr <- ip_vpts1 %>% select(datetime, mtr) %>%
   mutate(hm =  as.numeric(strftime(datetime, format="%H", tz = 'UTC')),
-         day = strftime(datetime, format="%Y-%m-%d", tz = 'UTC')) %>% 
+         day = strftime(datetime, format="%Y-%m-%d", tz = 'UTC')) %>%
   filter(!is.na(mtr)) %>%
   group_by(day, hm) %>%
   summarise(mtr_h = sum(mtr, na.rm = T), .groups = 'drop') %>%
@@ -156,7 +115,7 @@ wr_mtr <- ip_vpts1 %>% select(datetime, mtr) %>%
 wr_mtr <- calendar %>% left_join(wr_mtr, by = c('day' = 'day'))
 wr_mtr %>% print(n=100)
 
-pw2 <- 
+pw2 <-
   ggplot(aes(x = data, y = mtr), data = wr_mtr) +
   geom_bar(fill = "#00AFBB", stat = 'identity') +
   geom_errorbar(aes(ymin=mtr, ymax=mtr+se), width=0, colour = "#21908CFF") +
@@ -213,12 +172,12 @@ list_tbl <- read_rds('D:/Dropbox/programacao/GtruthRadar/data/lsummarioglobaljul
 
 penram <- bind_rows(list_tbl$tpr) %>%
   filter(minfunc > 30 & dia > '2020-11-30') %>%
-  ggplot(aes(dia, tpr)) + 
+  ggplot(aes(dia, tpr)) +
   # stat_summary(fun.data = 'mean_cl_normal', na.rm = T, size = 1, fatten = 1,
   #              geom = "pointrange", colour = "#00AFBB",
-  #              fun.args = list(mult = 1)) + 
-  stat_summary(fun = mean, na.rm = T, geom = "bar", fill = "#00AFBB") + 
-  stat_summary(fun.data = mean_cl_normal, na.rm = T, geom = "errorbar", 
+  #              fun.args = list(mult = 1)) +
+  stat_summary(fun = mean, na.rm = T, geom = "bar", fill = "#00AFBB") +
+  stat_summary(fun.data = mean_cl_normal, na.rm = T, geom = "errorbar",
                fun.args = list(mult = 1), color = "#00AFBB", size = .2 ) +
   scale_y_continuous(expand = c(0.01,0)) +
   scale_x_date(date_breaks = '5 days', date_labels = "%b %d") +

@@ -1,3 +1,9 @@
+# BirdTAM Scale
+BirdTAM <- c('0' = '#FFFFFF', '1' = '#E5FFE5', '2' = '#CCFFCC',
+             '3'= '#B2FFB2', '4'='#99FF99',
+             '5' = '#99FF99', '6' = '#FFFF00', '7' = '#FF7F00',
+             '8' = '#FF0000', '>8' = '#333333')
+
 # theme por plot
 theme_1 <-
   theme(
@@ -28,14 +34,21 @@ theme_1 <-
   )
 
 # build calendar ----
-f_calendar <- function(ical, fcal){
+f_calendar <-
+  function(ical, fcal){
   require(lubridate)
   require(zoo)
   require(tidyverse)
   #require(tidyverse)
-  ical <- tibble(data = seq.Date(as.Date(ical, '%d-%m-%Y'),
-                                     as.Date(fcal, '%d-%m-%Y'), by = '1 day')) %>%
+  ical <- tibble(
+    data = seq.Date(
+      from = as.Date(as.POSIXct(ical, format = "%Y-%m-%d %H:%M:%S", tz = 'UTC')),
+      to   = as.Date(as.POSIXct(fcal, format = "%Y-%m-%d %H:%M:%S", tz = 'UTC')),
+      by   = "day"
+    )
+  ) %>%
     mutate(
+      year = year(data),
       #finding the day no. of the week
       weekday = lubridate::wday(data, week_start = getOption("lubridate.week.start", 1)),
       #converting the day no. to factor

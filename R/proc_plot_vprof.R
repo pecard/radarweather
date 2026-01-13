@@ -7,7 +7,7 @@
 # https://github.com/aloftdata/data-repository/wiki
 
 # Packages ----
-install.packages('pacman')
+#install.packages('pacman')
 pacman::p_load(
   'bioRad',
   'getRad',
@@ -17,13 +17,20 @@ pacman::p_load(
   'RColorBrewer',
   'patchwork')
 
-# Plot VPTS data for two radars
+# Source functions and Defs
+source(here::here('R', 'aux_func.R'))
+
+# Calendar Dates ----
+ical = '2025-07-01 00:00:00'
+fcal = '2026-01-01 23:59:59'
+
+# Get vertical profile for lis radar
 vpts_list <-
   get_vpts(
   radar = c("ptlis"),
   datetime = lubridate::interval(
-    lubridate::as_datetime("2025-12-01 00:00:00"),
-    lubridate::as_datetime("2025-12-30 23:59:59")
+    lubridate::as_datetime(ical),
+    lubridate::as_datetime(fcal)
   ),
   source = "baltrad"
 )
@@ -32,7 +39,7 @@ vpts_list$attributes
 vpts_list$attributes$how
 
 ni <- names(vpts_list$radar)
-plot(regularize_vpts(vpts_list), main = ni)
+#plot(regularize_vpts(vpts_list), main = ni)
 
 plot(
   regularize_vpts(vpts_list),
@@ -42,6 +49,13 @@ plot(
   ylim = c(0, 2000),
 )
 
+plot(
+  vpts_list,
+  quantity = "dens",
+  xlab = NA,
+  ylab = "Altitude (m)",
+  ylim = c(0, 2000),
+)
 
 ip_vpts1 <-
   integrate_profile(
@@ -51,27 +65,8 @@ ip_vpts1 <-
     alpha = NA,
     interval_max = Inf
   )
-#
-# plot(ip_vpts1, quantity = "mtr",
-#      night_shade = T)
-
-#tsReg1 <- regularize_vpts(vpts0)
-#tsReg1$attributes$how
-
-#plot(tsReg1) # ok
-
-plot(
-  vpts_list,
-  quantity = "dens",
-  xlab = NA,
-  ylab = "Altitude (m)",
-  ylim = c(0, 1000),
-)
 
 # Calendar Dates ----
-ical = '01-12-2025 00:00:00'
-fcal = '30-12-2025 23:59:59'
-
 calendar <- f_calendar(ical, fcal)
 
 bin_cal <- tidyr::crossing(filter(select(calendar, day)),
@@ -108,7 +103,7 @@ pw1 <-
   guides(fill = guide_legend(reverse=T, title.position = "right")) +
   labs(title = expression('BirdTAM height profile' ~ birds / km^-3)
        , x = NULL, y = 'height (km)')
-pw1
+#pw1
 
 # weather radar MTR
 wr_mtr <-
@@ -133,41 +128,17 @@ pw2 <-
   #geom_point(colour = "#00AFBB", size = 2.5) +
   #scale_y_continuous(breaks = seq(0, 1000, by = 200)) +
   scale_x_date(date_breaks = "4 days", date_labels = "%b %d") +
-  theme(
-    legend.position="bottom",
-    legend.key.width = unit(0.5, "cm"),  # symbol size
-    legend.key.height = unit(0.3, "cm"), # symbol size
-    legend.text = element_text(size = 7, color = "white"),
-    legend.background =  element_rect(colour = "grey20", fill = "#1e1e1e"),
-    legend.title = element_text(size = 7, color = "white"),
-    legend.key = element_blank(),
-    strip.background =element_rect(fill="grey20"),
-    strip.text = element_text(colour = 'white'),
-    axis.text.y = element_text(size = 6, color = "white"),
-    axis.text.x = element_text(angle = 90, vjust= 0.5,
-                               size = 6, color = "white"),
-    axis.line = element_line(color = "grey20", size = .01),
-    axis.title = element_text(size = 6, color = "white"),
-    plot.title = element_text(size = 6, color = "white"),
-    panel.grid.major.x = element_line(colour = "grey20",size=0.01),
-    panel.grid.minor.x = element_line(colour = "grey20",size=0.01),
-    panel.grid.major.y = element_line(colour = "grey20",size=0.01),
-    panel.grid.minor.y = element_line(colour = "grey20",size=0.01),
-    #panel.grid = element_line(colour = "white",size=2),
-    #panel.border = element_rect(fill = NA, colour = "#1e1e1e", size = 2),
-    panel.background = element_rect(colour = "grey20", fill = "#1e1e1e"),
-    plot.background = element_rect(colour = "grey20", fill = "#1e1e1e")
-  ) +
+  theme_1 +
   labs(title = 'MTR',
        y = expression(atop('MTR '~ birds~km^-1~ h^-1, '(mean + se)'))
        #expression(atop('TPR' ~ h^-1, '(mean + se)'))
        , x = NULL)
-pw2
+#pw2
 
 pw1/pw2
 
 ggsave(
-  filename = here::here('outputs', 'birdTam_mtr.png'),
+  filename = here::here('outputs', 'birdTam_mtr_dec2025.png'),
   plot = pw1/pw2,
   dpi = 300,
   units = 'cm',
